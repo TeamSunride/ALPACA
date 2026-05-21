@@ -46,10 +46,10 @@ def parse_keystroke(keystroke):
     if keystroke == "launch":
         client.publish(SEQUENCE_TOPIC, json.dumps(payloads["LAUNCH_POPPET"])) # CORRESPONDS TO INJECTOR TYPE
     if keystroke == "fill open":
-        client.publish(SEQUENCE_TOPIC, json.dumps(payloads["FILL_OPEN"]))
+        client.publish(SERVO_TOPIC, json.dumps(payloads["FILL_OPEN"]))
     if keystroke == "fill close":
-        client.publish(SEQUENCE_TOPIC, json.dumps(payloads["FILL_CLOSE"]))
-        
+        client.publish(SERVO_TOPIC, json.dumps(payloads["FILL_CLOSE"]))
+
 
 client = mqtt.Client()
 client.on_disconnect = on_disconnect_callback
@@ -59,15 +59,16 @@ client.connect("localhost", 1883, 10)
 ser = serial.Serial(SERIAL_PORT)
 
 while(ser.isOpen):
-    keystroke = ser.read_until('\n')
+    keystroke = ser.readline()
+    print(keystroke)
+    parse_keystroke(keystroke)
 
 
-
-while (1):
-    client.publish(SEQUENCE_TOPIC, json.dumps(payloads["LAUNCH_POPPET"]))
-    time.sleep(1)
-    client.publish(SEQUENCE_TOPIC, json.dumps(payloads["LAUNCH_POPPET"]))
-    time.sleep(1)
+# while (1):
+#     client.publish(SEQUENCE_TOPIC, json.dumps(payloads["LAUNCH_POPPET"]))
+#     time.sleep(1)
+#     client.publish(SEQUENCE_TOPIC, json.dumps(payloads["LAUNCH_POPPET"]))
+#     time.sleep(1)
 
 
 

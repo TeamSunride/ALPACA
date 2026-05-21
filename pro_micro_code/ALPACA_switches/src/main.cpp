@@ -33,7 +33,7 @@ bool prop_armed = false;
 void abort_callback(void* ref){
   if (switches_armed)
   {
-    Serial.println("abort");
+    Serial.println(0);
   }
 }
 
@@ -41,7 +41,7 @@ void prop_arm_callback(void* ref){
   if (switches_armed)
   {
     prop_armed = true;
-    Serial.println("prop armed");
+    Serial.println(1);
   }  
 }
 
@@ -49,87 +49,87 @@ void prop_disarm_callback(void* ref){
   if (switches_armed)
   {
     prop_armed = false;
-    Serial.println("prop disarmed");
+    Serial.println(2);
   }
 }
 
 void switch_arm_callback(void* ref){
   switches_armed = true;
-  Serial.println("switches armed");
+  Serial.println(3);
 }
 
 void switch_disarm_callback(void* ref){
   switches_armed = false;
-  Serial.println("switches disarmed");
+  Serial.println(4);
 }
 
 void estop_callback(void* ref){
   if (switches_armed)
   {
-    Serial.println("estop");
+    Serial.println(5);
   }
 }
 
 void launch_callback(void* ref){
   if (switches_armed && prop_armed)
   {
-    Serial.println("launch");
+    Serial.println(6);
   }
 }
 
 void fill_open_callback(void* ref){
   if (switches_armed)
   {
-    Serial.println("fill open");
+    Serial.println(7);
   }
 }
 
 void fill_close_callback(void* ref){
   if (switches_armed)
   {
-    Serial.println("fill close");
+    Serial.println(8);
   }
 }
 
 void fuel_open_callback(void* ref){
   if (switches_armed && prop_armed)
   {
-    Serial.println("fuel open");
+    Serial.println(9);
   }
 }
 
 void fuel_close_callback(void* ref){
   if (switches_armed && prop_armed)
   {
-    Serial.println("fuel close");
+    Serial.println(10);
   }
 }
 
 void ox_open_callback(void* ref){
   if (switches_armed && prop_armed)
   {
-    Serial.println("ox open");
+    Serial.println(11);
   }
 }
 
 void ox_close_callback(void* ref){
   if (switches_armed && prop_armed)
   {
-    Serial.println("ox close");
+    Serial.println(12);
   }
 }
 
 void dump_open_callback(void* ref){
   if (switches_armed && prop_armed)
   {
-    Serial.println("dump open");
+    Serial.println(13);
   }
 }
 
 void dump_close_callback(void* ref){
   if (switches_armed && prop_armed)
   {
-    Serial.println("dump close");
+    Serial.println(14);
   }
 }
 
