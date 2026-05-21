@@ -46,11 +46,8 @@ void prop_arm_callback(void* ref){
 }
 
 void prop_disarm_callback(void* ref){
-  if (switches_armed)
-  {
-    prop_armed = false;
-    Serial.println(2);
-  }
+  prop_armed = false;
+  Serial.println(2);
 }
 
 void switch_arm_callback(void* ref){
