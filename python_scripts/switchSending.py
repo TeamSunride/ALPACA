@@ -11,6 +11,7 @@ import paho.mqtt.client as mqtt
 import time
 import json
 import serial
+import sys
 
 SERVO_TOPIC = "servos/set"
 SEQUENCE_TOPIC = "sequences/trigger"
@@ -32,14 +33,26 @@ payloads = {
     "LAUNCH_POPPET" : {"sequence" : "launch_poppet", "igniter_headstart_ms" : 200},
     "IGNITION_TEST" : {"sequence" : "ignition_test"}
 }
+def on_connect_callback(client, userdata, flags, rc):
+    if rc == 0:
+        print("connected sucessfully to broker")
+    else:
+        print("connection failed with code " + rc)
+
 
 def on_disconnect_callback(client, userdata, rc): # last will
-    if rc != 0:
-        print("connection lost, closing all valves")
-        client.publish(SEQUENCE_TOPIC, json.dumps(payloads["ESTOP"]))
-        print(rc)
+    if rc == 0:
+        print("clean disconnection")
+    elif rc == 7:
+        print("connection lost with rc = 7, will reconnect")
+    else:
+        print("unexpected disconnection " + rc)
 
-def parse_keystroke(key):
+# def on_publish_callback(client, userdata, mid):
+#     print("message published: " + mid)
+
+
+def parse_keystroke(key, client):
     match key:
         case "0": #abort
             return 
@@ -64,7 +77,7 @@ def parse_keystroke(key):
         case "10": #fuel close
             client.publish(SERVO_TOPIC, json.dumps(payloads["FUEL_CLOSE"]))
         case "11": #ox open
-            client.publish(SERVO_TOPIC, json.dumps(payloads["OX_CLOSE"]))  
+            client.publish(SERVO_TOPIC, json.dumps(payloads["OX_OPEN"]))  
         case "12": #ox close
             client.publish(SERVO_TOPIC, json.dumps(payloads["OX_CLOSE"]))
         case "13": #dump open
@@ -72,29 +85,47 @@ def parse_keystroke(key):
         case "14": #dump close
             client.publish(SERVO_TOPIC, json.dumps(payloads["DUMP_CLOSE"])) 
             
-        
 
-client = mqtt.Client()
-client.on_disconnect = on_disconnect_callback
+def main():
+    client = mqtt.Client(client_id="switchbox", clean_session=True)
+    client.on_connect = on_connect_callback
+    client.on_disconnect = on_disconnect_callback
+    # client.on_publish = on_publish_callback
 
-client.connect("localhost", 1883, 15)
+    print("trying to connect")
+    try:
+        client.connect("localhost", 1883, keepalive=20)
+    except Exception as e:
+        print("failed to connect " + e)
+        sys.exit(1)
 
-ser = serial.Serial(SERIAL_PORT)
-
-while(ser.isOpen):
-    keystroke = ser.readline()
-    decoded_keystroke = keystroke.decode('ascii').strip()
-    # print(decoded_keystroke)
-    # print(type(decoded_keystroke))
-    parse_keystroke(decoded_keystroke)
-
-
-# while (1):
-#     client.publish(SEQUENCE_TOPIC, json.dumps(payloads["LAUNCH_POPPET"]))
-#     time.sleep(1)
-#     client.publish(SEQUENCE_TOPIC, json.dumps(payloads["LAUNCH_POPPET"]))
-#     time.sleep(1)
+    client.loop_start()
+    time.sleep(1)
 
 
+    try:
+        ser = serial.Serial(SERIAL_PORT, timeout=1)
+        print("serial port opened")
+    except Exception as e:
+        print("failed to open serial port " + e)
+        client.loop_stop()
+        sys.exit(1)
+
+    while(ser.isOpen):
+        keystroke = ser.readline()
+        decoded_keystroke = keystroke.decode('ascii').strip()
+        # print(decoded_keystroke)
+        # print(type(decoded_keystroke))
+        parse_keystroke(decoded_keystroke, client)
+
+
+    # while (1):
+    #     client.publish(SEQUENCE_TOPIC, json.dumps(payloads["LAUNCH_POPPET"]))
+    #     time.sleep(1)
+    #     client.publish(SEQUENCE_TOPIC, json.dumps(payloads["LAUNCH_POPPET"]))
+    #     time.sleep(1)
+
+if __name__ == "__main__":
+    main()
 
 
