@@ -18,6 +18,7 @@ SEQUENCE_TOPIC = "sequences/trigger"
 
 SERIAL_PORT = '/dev/ttyACM0'
 
+# ALL DELAYS IN MILLISECONDS
 payloads = {
     "FUEL_CLOSE" : {"valve" : "fuel", "pos" : "close"},
     "FUEL_OPEN" : {"valve" : "fuel", "pos" : "open"},
@@ -29,9 +30,9 @@ payloads = {
     "DUMP_OPEN" : {"valve" : "dump", "pos" : "open"},
     "ESTOP" : {"sequence" : "estop"},
     "ABORT" : {"sequence" : "abort"},
-    "LAUNCH_CONV" : {"sequence" : "launch_conv", "igniter_headstart_ms" : 200, "oxidiser_delay_ms" : 200},
-    "LAUNCH_POPPET" : {"sequence" : "launch_poppet", "igniter_headstart_ms" : 200},
-    "IGNITION_TEST" : {"sequence" : "ignition_test"}
+    "LAUNCH_CONV" : {"sequence" : "launch_conv", "t_igniter1" : 0, "t_igniter2" : 100, "t_fuel" : 100, "t_ox" : 200},
+    "LAUNCH_POPPET" : {"sequence" : "launch_poppet", "t_igniter1" : 0, "t_igniter2" : 100, "t_propellants" : 200},
+    "IGNITION_TEST" : {"sequence" : "ignition_test", "t_igniter1" : 0, "t_igniter2" : 2000}
 }
 def on_connect_callback(client, userdata, flags, rc):
     if rc == 0:
@@ -96,7 +97,8 @@ def main():
     try:
         client.connect("localhost", 1883, keepalive=20)
     except Exception as e:
-        print("failed to connect " + e)
+        print("failed to connect ")
+        print(e)
         sys.exit(1)
 
     client.loop_start()
@@ -107,7 +109,8 @@ def main():
         ser = serial.Serial(SERIAL_PORT, timeout=1)
         print("serial port opened")
     except Exception as e:
-        print("failed to open serial port " + e)
+        print("failed to open serial port ")
+        print(e)
         client.loop_stop()
         sys.exit(1)
 
