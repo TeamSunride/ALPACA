@@ -7,6 +7,7 @@
 
 
 void setup() {
+  pinMode(LED_PIN, OUTPUT);
   Serial.begin();
   init_networking();
   init_servos();

@@ -1,15 +1,14 @@
 #include "networking.h"
 #include "actuation.h"
 
-IPAddress ip(192, 168, 137, 11);  //local ip  CHANGE LATER
-IPAddress broker(192, 168, 137, 121); //broker ip (ip of the pi), CHANGE LATER
+IPAddress ip(192, 168, 137, 52);  //local ip  CHANGE LATER
+IPAddress broker(192, 168, 137, 50); //broker ip (ip of the pi), CHANGE LATER
 Wiznet55rp20lwIP eth(20); //20 is internal CS pin
 WiFiClient ethClient;
 PubSubClient mqttClient(broker, 1883, on_message_callback, ethClient);
 
 void on_message_callback(char* topic, byte* payload, unsigned int length){
     //copy the payload the memory as buffer will be overwritten
-
     byte* p = (byte*)malloc(length);
     memcpy(p, payload, length);
 
@@ -18,26 +17,69 @@ void on_message_callback(char* topic, byte* payload, unsigned int length){
 
     if (strcmp(topic, "servos/set") == 0)
     {
-        const char* requested_valve = payload_json["valve"];
-        const char* requested_position = payload_json["pos"];
+        const char* valve = payload_json["valve"];
+        const char* pos = payload_json["pos"];
 
-        moveServo(requested_valve, requested_position);
+        if (strcmp(valve, "fill") == 0 )
+        {
+          fill.writeMicroseconds( (strcmp(pos, "open") == 0 ) ? OPEN_ANGLE_MS : CLOSE_ANGLE_MS );
+          // digitalWrite(LED_PIN, HIGH);
+          // delay(1000);
+          // digitalWrite(LED_PIN, LOW);
+        }
+
+        if (strcmp(valve, "ox") == 0 )
+        {
+          ox.writeMicroseconds( (strcmp(pos, "open") == 0) ? OPEN_ANGLE_MS : CLOSE_ANGLE_MS ); 
+        }
+
+        if (strcmp(valve, "fuel") == 0 )
+        {
+          fuel.writeMicroseconds( (strcmp(pos, "open") == 0) ? OPEN_ANGLE_MS : CLOSE_ANGLE_MS ); 
+        }
+
+        if (strcmp(valve, "dump") == 0 )
+        {
+          dump.writeMicroseconds( (strcmp(pos, "open") == 0) ? OPEN_ANGLE_MS : CLOSE_ANGLE_MS ); 
+        }
 
         char response[100];
-        sprintf(response, "moved %s valve to %s position", requested_valve, requested_position);
+        sprintf(response, "moved %s valve to %s position", valve, pos);
         mqttClient.publish("servos/status", response);
     }
 
+
     if (strcmp(topic, "sequences/trigger") == 0)
     {
-        const char* requested_sequence = payload_json["sequence"];
-        const char* param1 = payload_json["igniter_headstart_ms"];
-        const char* param2 = payload_json["oxidiser_delay_ms"];
-
-        triggerSequence(requested_sequence, param1, param2);
-
+        const char* sequence = payload_json["sequence"];
+        if (strcmp(sequence, "estop") == 0 )
+        {
+          estop_sequence();
+        }
+        
+        if (strcmp(sequence, "abort") == 0 )
+        {
+          abort_sequence();
+        }
+        
+        if (strcmp(sequence, "launch_conv") == 0 )
+        {
+          launch_conv_sequence((int)payload_json["t_igniter1"], (int)payload_json["t_igniter2"], (int)payload_json["t_fuel"], (int)payload_json["t_ox"]);
+        }
+        
+        if (strcmp(sequence, "launch_poppet") == 0 )
+        {
+          launch_poppet_sequence((int)payload_json["t_igniter1"], (int)payload_json["t_igniter2"], (int)payload_json["t_propellants"]);
+          Serial.print("after calling");
+        }
+        
+        if (strcmp(sequence, "ignition_test") == 0 )
+        {
+          ignition_test_sequence((int)payload_json["t_igniter1"], (int)payload_json["t_igniter2"]);
+        }
+        
         char response[100];
-        sprintf(response, "activated %s sequence", requested_sequence);
+        sprintf(response, "%s sequence activated successfully", sequence);
         mqttClient.publish("sequences/status", response);
     }
 
