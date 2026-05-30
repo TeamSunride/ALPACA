@@ -8,13 +8,22 @@
 
 void setup() {
   pinMode(LED_PIN, OUTPUT);
-  Serial.begin();
+  Serial.begin(115200);
+  delay(1000);
   init_networking();
   init_servos();
   
 }
 
 void loop() {
+  if (!mqttClient.connected())
+  {
+    Serial.println("mqtt disconnected, attempting to reconnect");
+    estop_sequence();
+    reconnect_mqtt();
+    return;
+  }
+  
   mqttClient.loop();
   delay(10);
 

@@ -1,11 +1,12 @@
 #include "networking.h"
 #include "actuation.h"
 
-IPAddress ip(192, 168, 137, 52);  //local ip  CHANGE LATER
-IPAddress broker(192, 168, 137, 50); //broker ip (ip of the pi), CHANGE LATER
+IPAddress ip(192, 168, 137, 52);  //local ip
+IPAddress broker(192, 168, 137, 50); //broker ip (ip of the pi)
 Wiznet55rp20lwIP eth(20); //20 is internal CS pin
 WiFiClient ethClient;
 PubSubClient mqttClient(broker, 1883, on_message_callback, ethClient);
+
 
 void on_message_callback(char* topic, byte* payload, unsigned int length){
     //copy the payload the memory as buffer will be overwritten
@@ -111,13 +112,29 @@ void init_networking(){
     Serial.println("local ip: ");
     Serial.println(eth.localIP());
 
-    if (mqttClient.connect("picoClient"))
+    mqttClient.setKeepAlive(2);
+
+    if (mqttClient.connect("picoClient", NULL, NULL, "status", 0, false, "pico disconnected, check cable? :/"))
     {
-        mqttClient.publish("helloworld", "hello world from pico");
+        mqttClient.publish("status", "connected, hello world from pico :))");
         mqttClient.subscribe("servos/set");
         mqttClient.subscribe("sequences/trigger");
     }
+}
 
+void reconnect_mqtt(){
+  if (mqttClient.connect("picoClient", NULL, NULL, "status", 0, false, "pico disconnected, check cable? :/"))
+  {
+    Serial.println("mqtt reconnected");
+    mqttClient.publish("status", "pico reconnected :DDDD");
+    mqttClient.subscribe("servos/set");
+    mqttClient.subscribe("sequences/trigger");
 
-
+  } 
+  else 
+  {
+    Serial.print("could not connect to mqtt broker, rc=");
+    Serial.println(mqttClient.state());
+  }
+  
 }

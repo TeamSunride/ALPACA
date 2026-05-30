@@ -11,6 +11,8 @@ extern IPAddress broker;
 
 void on_message_callback(char* topic, byte* payload, unsigned int length);
 void init_networking();
+void reconnect_mqtt();
+
 
 extern Wiznet55rp20lwIP eth;
 extern WiFiClient ethClient;
