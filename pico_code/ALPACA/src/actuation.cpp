@@ -15,6 +15,12 @@ void init_servos(){
   ox.writeMicroseconds(CLOSE_ANGLE_MS);
   fuel.writeMicroseconds(CLOSE_ANGLE_MS);
   dump.writeMicroseconds(CLOSE_ANGLE_MS);
+
+  pinMode(IGNITER1_PIN, OUTPUT);
+  pinMode(IGNITER2_PIN, OUTPUT);
+
+  digitalWrite(IGNITER1_PIN, HIGH);
+  digitalWrite(IGNITER2_PIN, HIGH);
 }
 
 //=================SEQUENCES=================
@@ -38,11 +44,11 @@ void launch_conv_sequence(int t_ign1_ms, int t_ign2_ms, int t_fuel_ms, int t_ox_
 
   delay(abs(t_ign1_ms) + 1);
 
-  digitalWrite(IGNITER1_PIN, HIGH);
+  digitalWrite(IGNITER1_PIN, LOW);
 
   delay(abs(t_ign2_ms - t_ign1_ms) + 1);
   
-  digitalWrite(IGNITER2_PIN, HIGH);
+  digitalWrite(IGNITER2_PIN, LOW);
   
   delay(abs(t_fuel_ms - t_ign2_ms - t_ign1_ms) + 1);
 
@@ -56,8 +62,8 @@ void launch_conv_sequence(int t_ign1_ms, int t_ign2_ms, int t_fuel_ms, int t_ox_
 
   fuel.writeMicroseconds(CLOSE_ANGLE_MS);
   ox.writeMicroseconds(CLOSE_ANGLE_MS);
-  digitalWrite(IGNITER1_PIN, LOW);
-  digitalWrite(IGNITER2_PIN, LOW);
+  digitalWrite(IGNITER1_PIN, HIGH);
+  digitalWrite(IGNITER2_PIN, HIGH);
 }
 
 void launch_poppet_sequence(int t_ign1_ms, int t_ign2_ms, int t_prop_ms){
@@ -66,11 +72,11 @@ void launch_poppet_sequence(int t_ign1_ms, int t_ign2_ms, int t_prop_ms){
   
   delay(abs(t_ign1_ms) + 1);
   
-  digitalWrite(IGNITER1_PIN, HIGH);
+  digitalWrite(IGNITER1_PIN, LOW);
   
   delay(abs(t_ign2_ms - t_ign1_ms) + 1);
   
-  digitalWrite(IGNITER2_PIN, HIGH);
+  digitalWrite(IGNITER2_PIN, LOW);
   
   delay(abs(t_prop_ms - t_ign2_ms - t_ign1_ms) + 1);
 
@@ -79,21 +85,21 @@ void launch_poppet_sequence(int t_ign1_ms, int t_ign2_ms, int t_prop_ms){
   delay(10000);
 
   dump.writeMicroseconds(CLOSE_ANGLE_MS);
-  digitalWrite(IGNITER1_PIN, LOW);
-  digitalWrite(IGNITER2_PIN, LOW);
+  digitalWrite(IGNITER1_PIN, HIGH);
+  digitalWrite(IGNITER2_PIN, HIGH);
 
 }
 
 void ignition_test_sequence(int t_ign1_ms, int t_ign2_ms){
   delay(abs(t_ign1_ms) + 1);
 
-  digitalWrite(IGNITER1_PIN, HIGH);
+  digitalWrite(IGNITER1_PIN, LOW);
 
   delay(abs(t_ign2_ms - t_ign1_ms) + 1);
 
-  digitalWrite(IGNITER2_PIN, HIGH);
+  digitalWrite(IGNITER2_PIN, LOW);
 
   delay(2000);
-  digitalWrite(IGNITER1_PIN, LOW);
-  digitalWrite(IGNITER2_PIN, LOW);
+  digitalWrite(IGNITER1_PIN, HIGH);
+  digitalWrite(IGNITER2_PIN, HIGH);
 }
