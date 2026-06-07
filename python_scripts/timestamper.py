@@ -12,9 +12,10 @@ import sys
 SCAN_FREQUENCY = 15000
 MEASUREMENT = "ue9_ain"
 TAGS = "device=labjack"
-
 CHANNELS = ["AIN0", "AIN1", "AIN2", "AIN3"]
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+start = None
+stop = None
 
 def formatInfluxLine(r, SCAN_FREQUENCY, batch_start_ns):
     num_samples = len(r[CHANNELS[0]])
@@ -34,57 +35,95 @@ def formatInfluxLine(r, SCAN_FREQUENCY, batch_start_ns):
         yield "%s,%s %s %d\n" % (MEASUREMENT, TAGS, fields, sample_timestamp_ns)
 
 
-def startSocket():
-    sock.connect(("localhost", 8094))
-    return
+def connectSocket():
+    while True:
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(("localhost", 8094))
+            print("socket connected")
+            return sock
+        except Exception as e:
+            print("could not connect to socket: %s , retrying" % e)
+            time.sleep(2)
 
-startSocket()
-d = ue9.UE9(ethernet=True, ipAddress="192.168.1.209")
-d.getCalibrationData()
+def connectLabjack():
+    while True:
+        try:
+            d = ue9.UE9(ethernet=True, ipAddress="192.168.1.52")
+            d.getCalibrationData()
+            # ChannelOptions: 0 = +-10V | 1 = +-1V | 2 = +-0.1V | 3 = +-0.01V | 8 = 0-20V
+            d.streamConfig(NumChannels=4, ChannelNumbers=[0, 1, 2, 3], ChannelOptions=[0, 0, 0, 0], SettlingTime=0, Resolution=12, ScanFrequency=SCAN_FREQUENCY)
+            print("Labjack connected")
+            return d
+        except Exception as e:
+            print("connection failed: %s , retrying" % e)
+            time.sleep(5)
 
-# ChannelOptions: 0 = +-10V | 1 = +-1V | 2 = +-0.1V | 3 = +-0.01V | 8 = 0-20V
-d.streamConfig(NumChannels=4, ChannelNumbers=[0, 1, 2, 3], ChannelOptions=[0, 0, 0, 0], SettlingTime=0, Resolution=12, ScanFrequency=SCAN_FREQUENCY)
+while True:
+    sock = connectSocket()
+    d = connectLabjack()
 
-missed = 0
-dataCount = 0
-packetCount = 0
+    missed = 0
+    dataCount = 0
+    packetCount = 0
+            
 
-try:
-    print("start stream, CTRL+C to stop")
-    d.streamStart()
-    start = datetime.now()
+    try:
+        print("start stream, CTRL+C to stop")
+        d.streamStart()
+        start = datetime.now()
 
-    for r in d.streamData():
-        if r is None:
-            print("no data")
-            continue
+        for r in d.streamData():
+            if r is None:
+                print("no data")
+                continue
 
-        batch_start_ns = time.time_ns()
+            batch_start_ns = time.time_ns()
 
-        if r["errors"] != 0:
-            print("Errors: %s at %s" % (r["errors"], datetime.now()))
-        if r["numPackets"] != d.packetsPerRequest:
-            print("missing packets! requested: %s received: %s" % (d.packetsPerRequest, r["numPackets"]))
-        if r["missed"] != 0:
-            missed += r["missed"]
-            print("missed %s samples" % r["missed"])
+            if r["errors"] != 0:
+                print("Errors: %s at %s" % (r["errors"], datetime.now()))
+            if r["numPackets"] != d.packetsPerRequest:
+                print("missing packets! requested: %s received: %s" % (d.packetsPerRequest, r["numPackets"]))
+            if r["missed"] != 0:
+                missed += r["missed"]
+                print("missed %s samples" % r["missed"])
 
-        for line in formatInfluxLine(r, SCAN_FREQUENCY, batch_start_ns):
-            sock.sendall(line.encode())  
+            for line in formatInfluxLine(r, SCAN_FREQUENCY, batch_start_ns):
+                sock.sendall(line.encode())  
 
-        dataCount += 1
-        packetCount += r["numPackets"]
+            dataCount += 1
+            packetCount += r["numPackets"]
 
 
-except KeyboardInterrupt:
-    print("stopping stream")
-except:
-    print("".join(i for i in traceback.format_exc()))
-finally:
-    stop = datetime.now()
-    d.streamStop()
-    print("stream stopped")
-    d.close()
-    if dataCount > 0:
-        runtime = (stop - start).seconds + (stop - start).microseconds / 1e6
-        print("runtime: %.2fs | missed: %d" % (runtime, missed))
+    except KeyboardInterrupt:
+        print("stopping stream")
+        sys.exit(0)
+
+    except:
+        print("".join(i for i in traceback.format_exc()))
+
+    finally:
+        stop = datetime.now()
+
+        try:
+            d.streamStop()
+        except:
+            pass
+
+        try:
+            d.close()
+        except:
+            pass
+        
+        try:
+            sock.close()
+        except:
+            pass
+
+        print("stream stopped")
+        if dataCount > 0:
+            runtime = (stop - start).seconds + (stop - start).microseconds / 1e6
+            print("runtime: %.2fs | missed: %d" % (runtime, missed))
+
+    print("connection lost, retrying")
+    time.sleep(5)
