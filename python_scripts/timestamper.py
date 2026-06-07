@@ -49,7 +49,7 @@ def connectSocket():
 def connectLabjack():
     while True:
         try:
-            d = ue9.UE9(ethernet=True, ipAddress="192.168.1.52")
+            d = ue9.UE9(ethernet=True, ipAddress="192.168.137.51")
             d.getCalibrationData()
             # ChannelOptions: 0 = +-10V | 1 = +-1V | 2 = +-0.1V | 3 = +-0.01V | 8 = 0-20V
             d.streamConfig(NumChannels=4, ChannelNumbers=[0, 1, 2, 3], ChannelOptions=[0, 0, 0, 0], SettlingTime=0, Resolution=12, ScanFrequency=SCAN_FREQUENCY)

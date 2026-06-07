@@ -31,7 +31,7 @@ payloads = {
     "ESTOP" : {"sequence" : "estop"},
     "ABORT" : {"sequence" : "abort"},
     "LAUNCH_CONV" : {"sequence" : "launch_conv", "t_igniter1" : 0, "t_igniter2" : 100, "t_fuel" : 100, "t_ox" : 200},
-    "LAUNCH_POPPET" : {"sequence" : "launch_poppet", "t_igniter1" : 0, "t_igniter2" : 100, "t_propellants" : 200},
+    "LAUNCH_POPPET" : {"sequence" : "launch_poppet", "t_igniter1" : 0, "t_igniter2" : 100, "t_propellants" : 500},
     "IGNITION_TEST" : {"sequence" : "ignition_test", "t_igniter1" : 0, "t_igniter2" : 2000}
 }
 def on_connect_callback(client, userdata, flags, rc):
@@ -66,31 +66,32 @@ def parse_keystroke(key, client):
         case "4": #switches disarmed
             return
         case "5": #estop
-            client.publish(SEQUENCE_TOPIC, json.dumps(payloads["ESTOP"]))
+            client.publish(SEQUENCE_TOPIC, json.dumps(payloads["ESTOP"]), 1)
         case "6": #launch
-            client.publish(SEQUENCE_TOPIC, json.dumps(payloads["LAUNCH_POPPET"])) #modify according to injector type
+            client.publish(SEQUENCE_TOPIC, json.dumps(payloads["LAUNCH_POPPET"]), 1) #modify according to injector type
         case "7": #fill open
-            client.publish(SERVO_TOPIC, json.dumps(payloads["FILL_OPEN"]))
+            client.publish(SERVO_TOPIC, json.dumps(payloads["FILL_OPEN"]), 1)
         case "8": #fill close
-            client.publish(SERVO_TOPIC, json.dumps(payloads["FILL_CLOSE"]))
+            client.publish(SERVO_TOPIC, json.dumps(payloads["FILL_CLOSE"]), 1)
         case "9": #fuel open
-            client.publish(SERVO_TOPIC, json.dumps(payloads["FUEL_OPEN"]))
+            client.publish(SERVO_TOPIC, json.dumps(payloads["FUEL_OPEN"]), 1)
         case "10": #fuel close
-            client.publish(SERVO_TOPIC, json.dumps(payloads["FUEL_CLOSE"]))
+            client.publish(SERVO_TOPIC, json.dumps(payloads["FUEL_CLOSE"]), 1)
         case "11": #ox open
-            client.publish(SERVO_TOPIC, json.dumps(payloads["OX_OPEN"]))  
+            client.publish(SERVO_TOPIC, json.dumps(payloads["OX_OPEN"]), 1)  
         case "12": #ox close
-            client.publish(SERVO_TOPIC, json.dumps(payloads["OX_CLOSE"]))
+            client.publish(SERVO_TOPIC, json.dumps(payloads["OX_CLOSE"]), 1)
         case "13": #dump open
-            client.publish(SERVO_TOPIC, json.dumps(payloads["DUMP_OPEN"]))
+            client.publish(SERVO_TOPIC, json.dumps(payloads["DUMP_OPEN"]), 1)
         case "14": #dump close
-            client.publish(SERVO_TOPIC, json.dumps(payloads["DUMP_CLOSE"])) 
+            client.publish(SERVO_TOPIC, json.dumps(payloads["DUMP_CLOSE"]), 1) 
             
 
 def main():
     client = mqtt.Client(client_id="switchbox", clean_session=True)
     client.on_connect = on_connect_callback
     client.on_disconnect = on_disconnect_callback
+    client.will_set(SEQUENCE_TOPIC, json.dumps(payloads["ESTOP"]))
     # client.on_publish = on_publish_callback
 
     print("trying to connect")
