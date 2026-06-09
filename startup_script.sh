@@ -12,7 +12,7 @@ echo "influxdb ready!"
 
 
 #wait for telegraf to be running
-echo "waiting for influxdb..."
+echo "waiting for telegraf..."
 until docker ps --filter "name=telegraf" --filter "status=running" | grep -q telegraf; do
 	sleep 2
 done

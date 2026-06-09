@@ -9,7 +9,7 @@ import sys
 # InfluxDB line protocol:
 # measurement,tag1=val1 field1=val1,field2=val2 timestamp_ns
 
-SCAN_FREQUENCY = 15000
+SCAN_FREQUENCY = 1000
 MEASUREMENT = "ue9_ain"
 TAGS = "device=labjack"
 CHANNELS = ["AIN0", "AIN1", "AIN2", "AIN3"]
@@ -61,18 +61,28 @@ def connectLabjack():
 
 while True:
     sock = connectSocket()
+    time.sleep(1)
     d = connectLabjack()
+    time.sleep(1)
 
     missed = 0
     dataCount = 0
     packetCount = 0
-            
-
-    try:
+        
+    try:        
         print("start stream, CTRL+C to stop")
-        d.streamStart()
+        try:
+            d.streamStart()
+        except LabJackPython.LowlevelErrorException as e:
+            if e.errorCode == 48:
+                d.streamStop()
+                connectLabjack()
+            else:
+                pass
         start = datetime.now()
 
+        count = 0
+        last_update = time.time()
         for r in d.streamData():
             if r is None:
                 print("no data")
@@ -88,8 +98,14 @@ while True:
                 missed += r["missed"]
                 print("missed %s samples" % r["missed"])
 
+            # print("packet")
             for line in formatInfluxLine(r, SCAN_FREQUENCY, batch_start_ns):
                 sock.sendall(line.encode())  
+                count += 1
+                now = time.time()
+                if now - last_update > 2:
+                     print("count %s" % count)
+                     last_update = now 
 
             dataCount += 1
             packetCount += r["numPackets"]
